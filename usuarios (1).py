@@ -1,0 +1,36 @@
+"""
+Arquivo central de usuários e códigos de acesso individuais (3 dígitos)
+"""
+
+USUARIOS_PERMITIDOS = {
+    "101": "CT - ADILSON",
+    "102": "CT - EDUARDO FIGUEIREDO",
+    "103": "CT - GISELE FERREIRA",
+    "104": "CT - FLAVIO",
+    "105": "CT - ELISANGELA",
+    "106": "CT - DANIELLI",
+    "107": "CT - REGINA PONTES",
+    "108": "CT - ELIZABETH SOUZA",
+    "109": "CT - DANIEL",
+    "110": "CT - RODRIGO AZEVEDO",
+    "111": "CT - SIMONE SILVA",
+    "112": "CT - BRUNA MOTTA",
+    "113": "CT - LUCAS LOPES",
+    "114": "CT - TALITA SILVA",
+    "115": "CT - GABRIELLY",
+    "116": "CT - CLEBER",
+    "117": "CT - LEONARDO SANTOS",
+    "118": "CT - KEILLA",
+    "119": "CT - MARCELO SOARES",
+    "120": "CT - EDUARDO ABREU",
+    "121": "CT - SERGIO",
+    "122": "CT - LUCIANO",
+    "123": "CT - RENATA NASCIMENTO",
+    "124": "CT - PAULO FREITAS",
+    "125": "CT - RAYANE",
+    "126": "CO - WALLACE",
+    "127": "CO - TAYANNA",
+    "128": "CT - THAIS",
+    "129": "CT - SELMA",
+    "130": "CT - RAFAEL",
+}
