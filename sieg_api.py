@@ -7,8 +7,10 @@ Autenticação em dois níveis (conforme documentação):
   2) OAuth: token definitivo do cliente (vale 30 dias, renovável via /oauth/refresh)
 Toda chamada de dados envia:  Authorization: Bearer {jwt}  +  X-OAuth-Token: {token}
 
-Segredos esperados em st.secrets:
-  SIEG_CLIENT_ID, SIEG_SECRET_KEY, SIEG_OAUTH_TOKEN  (e, opcional, SIEG_API_KEY)
+Segredos em st.secrets (use o que você tiver):
+  SIEG_API_KEY (chave do painel "Integrações API SIEG")  -> mínimo necessário
+  SIEG_CLIENT_ID + SIEG_SECRET_KEY                       -> opcional, gera o JWT
+  SIEG_OAUTH_TOKEN                                       -> opcional
 """
 import base64
 import io
@@ -102,15 +104,15 @@ def gerar_jwt(forcar=False):
 
 
 def _headers_dados(oauth_token):
-    if not oauth_token:
-        raise SiegErro("Informe o token OAuth (SIEG_OAUTH_TOKEN).")
-    h = {
-        "Authorization": f"Bearer {gerar_jwt()}",
-        "X-OAuth-Token": oauth_token,
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
+    """Monta os headers com o que estiver configurado (chave de API, JWT e/ou token OAuth)."""
     api_key = _segredo("SIEG_API_KEY")
+    if not api_key and not oauth_token:
+        raise SiegErro("Configure SIEG_API_KEY (ou SIEG_OAUTH_TOKEN) em st.secrets.")
+    h = {"Accept": "application/json", "Content-Type": "application/json"}
+    if _segredo("SIEG_CLIENT_ID") and _segredo("SIEG_SECRET_KEY"):
+        h["Authorization"] = f"Bearer {gerar_jwt()}"
+    if oauth_token:
+        h["X-OAuth-Token"] = oauth_token
     if api_key:
         h["X-API-Key"] = api_key
     return h
@@ -221,7 +223,7 @@ def baixar_nfse(oauth_token, cnpj, papel, inicio, fim, baixar_eventos=True, prog
         r = _requisitar("POST", "/baixar-xmls", headers=_headers_dados(oauth_token), json=corpo)
         _debug["resposta"] = f"HTTP {r.status_code}\n{r.text[:1500]}"
 
-        if r.status_code == 401 and not jwt_renovado:
+        if r.status_code == 401 and not jwt_renovado and _segredo("SIEG_CLIENT_ID"):
             gerar_jwt(forcar=True)
             jwt_renovado = True
             continue
@@ -268,11 +270,12 @@ def pagina_sieg_api(mapa_contas=None, caminho_arquivo_bd=None, eh_dono=True):
 
     # ---------------- AUTENTICAÇÃO ----------------
     oauth_token = _segredo("SIEG_OAUTH_TOKEN")
-    cred_ok = bool(_segredo("SIEG_CLIENT_ID") and _segredo("SIEG_SECRET_KEY") and oauth_token)
+    cred_ok = bool(_segredo("SIEG_API_KEY") or oauth_token)
 
     with st.expander("🔑 Autenticação SIEG", expanded=not cred_ok):
         st.caption(
-            "Credenciais lidas de `st.secrets`: SIEG_CLIENT_ID, SIEG_SECRET_KEY e SIEG_OAUTH_TOKEN. "
+            "Credenciais lidas de `st.secrets`: SIEG_API_KEY (chave gerada no painel da SIEG) e, "
+            "se você tiver, SIEG_CLIENT_ID / SIEG_SECRET_KEY / SIEG_OAUTH_TOKEN. "
             "Se preferir, cole abaixo um token OAuth só para esta sessão."
         )
         manual = st.text_input("Token OAuth definitivo (opcional)", type="password", key="api_oauth_manual")
@@ -323,7 +326,7 @@ def pagina_sieg_api(mapa_contas=None, caminho_arquivo_bd=None, eh_dono=True):
     incluir_eventos = st.checkbox("Incluir eventos (cancelamentos / substituições)", value=True, key="api_eventos")
     st.caption(
         f"Empresa: CNPJ {cnpj_emp}. A SIEG limita a 2 requisições por minuto (50 XMLs cada), "
-        "então lotes grandes levam alguns minutos."
+        "então lotes grandes levam alguns minutos. Prefira períodos de até 2 meses."
     )
 
     if st.button("🔎 Buscar na SIEG", type="primary", key="api_btn_buscar"):
