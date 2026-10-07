@@ -111,6 +111,9 @@ def _headers_dados(oauth_token):
     h = {"Accept": "application/json", "Content-Type": "application/json"}
     if _segredo("SIEG_CLIENT_ID") and _segredo("SIEG_SECRET_KEY"):
         h["Authorization"] = f"Bearer {gerar_jwt()}"
+    elif api_key:
+        # Sem ClientId/SecretKey: tenta a própria chave como token Bearer (teste)
+        h["Authorization"] = f"Bearer {api_key}"
     if oauth_token:
         h["X-OAuth-Token"] = oauth_token
     if api_key:
